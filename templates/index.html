@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Sheet Analysis</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.1/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: none;
+            margin: 0 auto;
+        }
+        .plot-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .plot {
+            width: calc(50% - 20px); /* Adjust as needed */
+            margin-bottom: 20px;
+        }
+        .plot img {
+            width: 100%;
+        }
+        .box-text {
+            font-size: 20px; /* Adjust as needed */
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 p-4">
+
+    <div class="container">
+        <div class="max-w-6xl mx-auto bg-white shadow p-6 rounded-md">
+            <h1 class="text-3xl font-semibold mb-6">Balance Sheet Analysis</h1>
+            <form method="post">
+                <label for="ticker" class="block mb-4 text-xl">Enter Stock Ticker:</label>
+                <input type="text" id="ticker" name="ticker" class="w-full border border-gray-300 rounded-md py-3 px-4 mb-6 text-xl" autocomplete="off">
+                <div id="suggestions" class="border border-gray-300 rounded-md py-1 px-4 text-xl hidden"></div>
+                <button type="submit" class="bg-blue-500 text-white px-6 py-3 rounded-md text-xl">Analyze</button>
+            </form>
+            {% if plots %}
+            <div class="mt-8 plot-container">
+                {% for plot in plots %}
+                <div class="plot relative">
+                    <h3 class="text-xl font-semibold mb-4">{{ plot.year|replace('00:00:00', '')  }}</h3>
+
+                    <img src="data:image/png;base64,{{ plot.plot_url }}" alt="Plot for {{ plot.year }}">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div>
+                <h2 class="text-2xl font-semibold mt-8">Company Information</h2>
+                <table class="mt-4">
+                    <tbody>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Address</td>
+                            <td>{{ stock_info.get('address1', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>City</td>
+                            <td>{{ stock_info.get('city', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>State</td>
+                            <td>{{ stock_info.get('state', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Country</td>
+                            <td>{{ stock_info.get('country', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Website</td>
+                            <td><a href="{{ stock_info.get('website', '') }}">{{ stock_info.get('website', '') }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Industry</td>
+                            <td>{{ stock_info.get('industry', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Sector</td>
+                            <td>{{ stock_info.get('sector', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Long Business Summary</td>
+                            <td>{{ stock_info.get('longBusinessSummary', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Full Time Employees</td>
+                            <td>{{ stock_info.get('fullTimeEmployees', '') }}</td>
+                        </tr>
+                        <tr>
+                            <td>IR Website</td>
+                            <td><a href="{{ stock_info.get('irWebsite', '') }}">{{ stock_info.get('irWebsite', '') }}</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% if error_message %}
+            <p class="mt-6 text-red-500 text-lg">{{ error_message }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        // Function to fetch and display suggestions based on user input
+        async function getSuggestions() {
+            const tickerInput = document.getElementById('ticker');
+            const suggestionsContainer = document.getElementById('suggestions');
+            const ticker = tickerInput.value.trim();
+            
+            // Clear previous suggestions
+            suggestionsContainer.innerHTML = '';
+
+            // If input is not empty, fetch suggestions
+            if (ticker) {
+                try {
+                    const response = await fetch(`/suggestions?ticker=${ticker}`);
+                    const suggestions = await response.json();
+                    suggestions.forEach(suggestion => {
+                        const suggestionElement = document.createElement('div');
+                        suggestionElement.textContent = suggestion;
+                        suggestionElement.classList.add('py-1', 'cursor-pointer');
+                        suggestionElement.addEventListener('click', () => {
+                            tickerInput.value = suggestion;
+                            suggestionsContainer.classList.add('hidden');
+                        });
+                        suggestionsContainer.appendChild(suggestionElement);
+                    });
+                    suggestionsContainer.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error fetching suggestions:', error);
+                }
+            } else {
+                suggestionsContainer.classList.add('hidden');
+            }
+        }
+
+        // Add event listener to input for dynamic suggestion display
+        const tickerInput = document.getElementById('ticker');
+        tickerInput.addEventListener('input', getSuggestions);
+    
+    </script>
+</body>
+</html>
